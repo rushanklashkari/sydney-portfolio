@@ -145,8 +145,9 @@ footer{position:relative;z-index:2;text-align:center;color:var(--muted);font-siz
 #err{position:fixed;inset:0;z-index:0;background:radial-gradient(circle at 30% 20%,#2a4756,#0b1520 70%)}
 #loading{position:fixed;inset:0;z-index:9;display:grid;place-items:center;background:radial-gradient(120% 90% at 50% 110%,#2e5a73 0%,#13283a 45%,#0a1520 100%);color:var(--ink);transition:opacity 1.2s;overflow:hidden;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
 #loading .ld{width:min(520px,100%);text-align:center;position:relative;z-index:1}
-#loading .ld small{display:block;font:700 12px var(--body);letter-spacing:.24em;text-transform:uppercase;color:var(--accent)}
-#loading h2{font-family:var(--display);font-weight:600;font-size:clamp(1.8rem,5vw,2.8rem);margin:.35em 0 .2em}
+#loading .av{width:84px;height:84px;border-radius:50%;object-fit:cover;object-position:50% 20%;border:2px solid rgba(242,166,121,.7);box-shadow:0 10px 30px rgba(0,0,0,.4);display:block;margin:0 auto 14px}
+#loading .ld small{display:block;margin-bottom:16px;font:700 12px var(--body);letter-spacing:.24em;text-transform:uppercase;color:var(--accent)}
+#loading h2{font-family:var(--display);font-weight:600;font-size:clamp(1.8rem,5vw,2.8rem);margin:0 0 .25em}
 #loading .msg{font:15px/1.5 var(--body);color:#cfd8dc;min-height:1.5em;transition:opacity .4s}
 #loading .bar{height:3px;border-radius:2px;background:rgba(255,255,255,.14);margin:22px auto 10px;overflow:hidden;width:min(360px,90%)}
 #loading .bar i{display:block;height:100%;width:4%;background:linear-gradient(90deg,var(--accent),#ffd6b8);transition:width .5s}
@@ -167,12 +168,13 @@ footer{position:relative;z-index:2;text-align:center;color:var(--muted);font-siz
 <div id="loading" role="status" aria-live="polite">
   <svg viewBox="0 0 1100 260" aria-hidden="true"><path fill="#fff" d="M120 250 L120 150 L135 150 L135 250 Z M965 250 L965 150 L980 150 L980 250 Z"/><path fill="none" stroke="#fff" stroke-width="7" d="M135 168 Q550 -20 965 168"/><path fill="none" stroke="#fff" stroke-width="4" d="M135 200 Q550 60 965 200"/><path fill="#fff" d="M0 205 H1100 V212 H0Z"/><path class="wave" fill="#fff" opacity=".6" d="M0 236 Q60 226 120 236 T240 236 T360 236 T480 236 T600 236 T720 236 T840 236 T960 236 T1080 236 T1200 236 V260 H0Z"/></svg>
   <div class="ld">
-    <small>Rushank Lashkari</small>
-    <h2>Sydney is loading</h2>
-    <p class="msg" id="ldMsg">Streaming the harbour in from aerial photography</p>
+    <img class="av" id="ldAv" alt="Rushank Lashkari" width="84" height="84">
+    <h2>Rushank Lashkari</h2>
+    <small>IT Sales Strategist · Enterprise &amp; B2B Technology · Canberra</small>
+    <p class="msg" id="ldMsg">Ranked #1 nationally in security software sales</p>
     <div class="bar"><i id="ldBar"></i></div>
     <div class="pct" id="ldPct">Connecting</div>
-    <p class="first" id="ldFirst" hidden>First time here? The whole city is built live in your browser, so give it a few seconds to load properly. It's worth the wait, and it's much faster next time.</p>
+    <p class="first" id="ldFirst" hidden>First time here? Sydney Harbour is being built live in your browser as the backdrop to my story, so give it a few seconds. It's much faster next time.</p>
     <button class="skip" id="ldSkip" hidden>Start reading while it loads</button>
   </div>
 </div>
@@ -361,7 +363,8 @@ const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fall
  let loaderDone=false;const finishLoad=()=>{if(loaderDone)return;loaderDone=true;$('ldBar').style.width='100%';$('ldPct').textContent='Ready';
    try{localStorage.setItem('rlSydneyVisited','1');}catch(e){}setTimeout(()=>$('loading').classList.add('done'),500);};
  {let first=true;try{first=!localStorage.getItem('rlSydneyVisited');}catch(e){}if(first)$('ldFirst').hidden=false;
-  const lines=['Streaming the harbour in from aerial photography','Laying 1,056,006 tiles on the Opera House shells','Raising the Bridge arch 134 metres above the water','Filling Sydney Harbour','Lining up the ferries at Circular Quay'];
+  const lines=['Ranked #1 nationally in security software sales','Meanwhile, laying 1,056,006 tiles on the Opera House','Sales Manager leading a technology sales team','Raising the Bridge arch 134 metres above the water','Master of International Business, University of Canberra','Filling Sydney Harbour','Builds the websites and tools he sells into','Former President of a 200+ member business society','Lining up the ferries at Circular Quay'];
+  {const ph=document.querySelector('#about .photo img');if(ph)$('ldAv').src=ph.src;}
   let li=0;const rot=setInterval(()=>{if(loaderDone)return clearInterval(rot);const m=$('ldMsg');m.style.opacity=0;setTimeout(()=>{m.textContent=lines[++li%lines.length];m.style.opacity=1;},400);},2600);
   setTimeout(()=>{$('ldSkip').hidden=false;},5000);$('ldSkip').onclick=finishLoad;}
  try{const ts=await C.createGooglePhotorealistic3DTileset();const SMALL=innerWidth<700;ts.maximumScreenSpaceError=SMALL?32:24;ts.dynamicScreenSpaceError=true;ts.foveatedScreenSpaceError=true;ts.foveatedConeSize=.35;ts.skipLevelOfDetail=false;ts.cacheBytes=1024*1024*1024;ts.maximumCacheOverflowBytes=512*1024*1024;ts.preloadWhenHidden=true;ts.preferLeaves=false;ts.progressiveResolutionHeightFraction=.5;
