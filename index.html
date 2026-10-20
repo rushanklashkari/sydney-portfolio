@@ -335,13 +335,19 @@ const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fall
  sc.skyAtmosphere.show=true;sc.fog.enabled=true;sc.fog.density=1.2e-4;sc.postProcessStages.fxaa.enabled=true;
  viewer.clock.currentTime=C.JulianDate.fromIso8601('2026-01-15T02:30:00Z');viewer.clock.shouldAnimate=false; // 1:30 pm AEDT, summer
  sc.light=new C.SunLight();sc.highDynamicRange=false;
- try{const ts=await C.createGooglePhotorealistic3DTileset();ts.maximumScreenSpaceError=innerWidth<700?28:18;ts.dynamicScreenSpaceError=true;ts.foveatedScreenSpaceError=true;ts.foveatedConeSize=.2;ts.cacheBytes=1024*1024*1024;ts.maximumCacheOverflowBytes=512*1024*1024;ts.preloadWhenHidden=true;ts.preferLeaves=false;ts.progressiveResolutionHeightFraction=.5;
-   viewer.resolutionScale=Math.min(1,1.25/(window.devicePixelRatio||1))*(window.devicePixelRatio>1?window.devicePixelRatio:1);viewer.useBrowserRecommendedResolution=true;sc.primitives.add(ts);}
+ try{const ts=await C.createGooglePhotorealistic3DTileset();const SMALL=innerWidth<700;ts.maximumScreenSpaceError=SMALL?32:24;ts.dynamicScreenSpaceError=true;ts.foveatedScreenSpaceError=true;ts.foveatedConeSize=.35;ts.skipLevelOfDetail=false;ts.cacheBytes=1024*1024*1024;ts.maximumCacheOverflowBytes=512*1024*1024;ts.preloadWhenHidden=true;ts.preferLeaves=false;ts.progressiveResolutionHeightFraction=.5;
+   viewer.useBrowserRecommendedResolution=true;viewer.resolutionScale=1;
+   // fast first view, then step up to full sharpness once the opening tiles are in; step back down if the device struggles
+   let hq=false;const goHQ=()=>{if(hq)return;hq=true;ts.maximumScreenSpaceError=SMALL?10:6;ts.foveatedConeSize=.6;viewer.useBrowserRecommendedResolution=false;
+     viewer.resolutionScale=Math.min(1,2/(devicePixelRatio||1));$('loading').classList.add('done');
+     let n=0,t0=performance.now();const fps=sc.postRender.addEventListener(()=>{if(++n<90)return;const ms=(performance.now()-t0)/n;fps();
+       if(ms>34){viewer.useBrowserRecommendedResolution=true;viewer.resolutionScale=1;ts.maximumScreenSpaceError=SMALL?14:10;}});};
+   ts.initialTilesLoaded.addEventListener(goHQ);setTimeout(goHQ,7000);sc.primitives.add(ts);}
  catch(e){console.error(e);viewer.destroy();fallback();return;}
  // ---- camera shots: [longitude, latitude, height m, heading deg, pitch deg] ----
  const OH=[151.2153,-33.8568],BR=[151.2108,-33.8523];
  const SHOTS=[
-  [151.2265,-33.8590,140,288,-10],   // hero: from Mrs Macquaries Point, the Opera House in front of the Bridge
+  [151.2262,-33.8578,120,272,-8],   // hero: from Mrs Macquaries Point, the Opera House in front of the Bridge
   [151.2190,-33.8540,70,218,-9],     // about: the Opera House shells from the harbour
   [151.2142,-33.8503,22,236,12],     // experience: under the Bridge from the water off Kirribilli
   [151.2112,-33.8495,420,175,-38],   // education: over Circular Quay and The Rocks
@@ -372,7 +378,7 @@ const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fall
    const damp=reduce?1:1-Math.exp(-dt*4.5);
    C.Cartesian3.lerp(cur.pos,want.pos,damp,cur.pos);cur.h=angLerp(cur.h,want.h%360,damp);cur.p+=(want.p-cur.p)*damp;
    viewer.camera.setView({destination:cur.pos,orientation:{heading:C.Math.toRadians(cur.h),pitch:C.Math.toRadians(cur.p),roll:0}});});
- viewer.camera.frustum.fov=C.Math.toRadians(innerWidth<700?70:55);
+ viewer.camera.frustum.fov=C.Math.toRadians(innerWidth<700?70:55);if(innerWidth>=760)viewer.camera.frustum.xOffset=-.0;
  const hide=()=>$('loading').classList.add('done');
  let done=false;sc.globe;setTimeout(hide,6000);
  viewer.scene.postRender.addEventListener(function f(){if(!done&&viewer.scene.primitives.length){done=true;setTimeout(hide,1200);}});
