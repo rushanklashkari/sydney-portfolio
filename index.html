@@ -164,6 +164,12 @@ footer{position:relative;z-index:2;text-align:center;color:var(--muted);font-siz
 </head>
 <body>
 <div id="stage"></div>
+<div id="vids" hidden aria-hidden="true">
+  <video muted playsinline loop preload="auto" data-src="videos/1.mp4"></video>
+  <video muted playsinline loop preload="none" data-src="videos/2.mp4"></video>
+  <video muted playsinline loop preload="none" data-src="videos/3.mp4"></video>
+  <video muted playsinline loop preload="none" data-src="videos/4.mp4"></video>
+</div>
 <div id="shade"></div>
 <div id="loading" role="status" aria-live="polite">
   <svg viewBox="0 0 1100 260" aria-hidden="true"><path fill="#fff" d="M120 250 L120 150 L135 150 L135 250 Z M965 250 L965 150 L980 150 L980 250 Z"/><path fill="none" stroke="#fff" stroke-width="7" d="M135 168 Q550 -20 965 168"/><path fill="none" stroke="#fff" stroke-width="4" d="M135 200 Q550 60 965 200"/><path fill="#fff" d="M0 205 H1100 V212 H0Z"/><path class="wave" fill="#fff" opacity=".6" d="M0 236 Q60 226 120 236 T240 236 T360 236 T480 236 T600 236 T720 236 T840 236 T960 236 T1080 236 T1200 236 V260 H0Z"/></svg>
@@ -314,6 +320,9 @@ footer{position:relative;z-index:2;text-align:center;color:var(--muted);font-siz
 #stage .cesium-viewer-bottom{z-index:6;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px))}
 #stage .cesium-widget-credits{opacity:.85}
 @media (pointer:coarse){.panel,.stats>div,.btn,.tag3{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}.panel{background:rgba(10,18,22,.86)!important}}
+#vids{position:fixed;inset:0;z-index:0;background:#13283a}
+#vids video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s ease}
+#vids video.on{opacity:1}
 #fallback{position:fixed;inset:0;z-index:0;background:linear-gradient(180deg,#5d8fc4 0%,#a9c7df 55%,#2f5d73 56%,#17384a 100%)}
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.121.0/Build/Cesium/";</script>
@@ -351,7 +360,21 @@ addEventListener('scroll',activeChapter,{passive:true});activeChapter();
 const CESIUM_ION_TOKEN='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6ImtUNHVndWYtQUNCTzBDQTAiLCJqdGkiOiI3NGU4NmY0NC0xMGEzLTQ2ZmUtYTRlNC1mNWY0ZmY4MmVkM2IiLCJpZCI6NTMwOTUzLCJzdWIiOiJSdXNoYW5rIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6InJ1c2hhbmstcG9ydGZvbGlvIiwiaWF0IjoxNzkyNDkwODYzfQ.4x8ov7sbbR0YI4rexVl-LgeFZ2sNYjqxxaaFyF-aDUI';
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fallback"></div>');$('loading').classList.add('done');};
+// ---- phones and tablets: drone footage by section ----
+const TOUCH=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||matchMedia('(pointer: coarse)').matches;
+function videoMode(){const box=$('vids');box.hidden=false;const V=[...box.querySelectorAll('video')];let cur=-1,ok=0;
+  V.forEach(v=>{v.src=v.dataset.src;v.addEventListener('canplay',()=>{ok++;},{once:true});v.addEventListener('error',()=>{v.remove();},{once:true});});
+  // sections -> clip: hero+about 1, experience+education 2, skills+work 3, harbour+tower+contact 4
+  const MAP={hero:0,about:0,experience:1,education:1,skills:2,work:2,ainslie:3,tower:3,contact:3};
+  const pick=()=>{const mid=innerHeight*.5;let id='hero';CH.forEach(c=>{if(c.getBoundingClientRect().top<mid)id=c.id;});
+    const live=V.filter(v=>v.isConnected);if(!live.length)return;const i=Math.min(MAP[id]??0,live.length-1);if(i===cur)return;cur=i;
+    live.forEach((v,k)=>{if(k===i){v.preload='auto';v.play().catch(()=>{});v.classList.add('on');}else{v.classList.remove('on');setTimeout(()=>{if(!v.classList.contains('on'))v.pause();},1300);}});
+    const nx=live[i+1];if(nx)nx.preload='auto';};
+  addEventListener('scroll',pick,{passive:true});pick();
+  const done=()=>$('loading').classList.add('done');V[0]&&V[0].addEventListener('playing',()=>setTimeout(done,300),{once:true});setTimeout(done,4000);
+  try{localStorage.setItem('rlSydneyVisited','1');}catch(e){}}
 (async()=>{
+ if(TOUCH){videoMode();return;}
  if(!window.Cesium||!CESIUM_ION_TOKEN){fallback();return;}
  const C=Cesium;C.Ion.defaultAccessToken=CESIUM_ION_TOKEN;
  const SMALL=innerWidth<700,IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),MOBILE=IOS||matchMedia('(pointer: coarse)').matches;
