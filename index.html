@@ -313,6 +313,7 @@ footer{position:relative;z-index:2;text-align:center;color:var(--muted);font-siz
 <style>
 #stage .cesium-viewer-bottom{z-index:6;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px))}
 #stage .cesium-widget-credits{opacity:.85}
+@media (pointer:coarse){.panel,.stats>div,.btn,.tag3{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}.panel{background:rgba(10,18,22,.86)!important}}
 #fallback{position:fixed;inset:0;z-index:0;background:linear-gradient(180deg,#5d8fc4 0%,#a9c7df 55%,#2f5d73 56%,#17384a 100%)}
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.121.0/Build/Cesium/";</script>
@@ -353,8 +354,9 @@ const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fall
 (async()=>{
  if(!window.Cesium||!CESIUM_ION_TOKEN){fallback();return;}
  const C=Cesium;C.Ion.defaultAccessToken=CESIUM_ION_TOKEN;
+ const SMALL=innerWidth<700,IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),MOBILE=IOS||matchMedia('(pointer: coarse)').matches;
  let viewer;
- try{viewer=new C.Viewer('stage',{globe:false,baseLayerPicker:false,geocoder:false,homeButton:false,sceneModePicker:false,navigationHelpButton:false,animation:false,timeline:false,fullscreenButton:false,infoBox:false,selectionIndicator:false,skyAtmosphere:new C.SkyAtmosphere(),msaaSamples:1,requestRenderMode:false,targetFrameRate:60});}
+ try{viewer=new C.Viewer('stage',{globe:false,baseLayerPicker:false,geocoder:false,homeButton:false,sceneModePicker:false,navigationHelpButton:false,animation:false,timeline:false,fullscreenButton:false,infoBox:false,selectionIndicator:false,skyAtmosphere:new C.SkyAtmosphere(),msaaSamples:1,requestRenderMode:MOBILE,maximumRenderTimeChange:Infinity,targetFrameRate:MOBILE?30:60,contextOptions:{webgl:{powerPreference:MOBILE?'low-power':'high-performance',preserveDrawingBuffer:false}}});}
  catch(e){fallback();return;}
  const sc=viewer.scene;
  viewer.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();try{sessionStorage.setItem('rlScroll',String(scrollY));}catch(_){}setTimeout(()=>location.reload(),300);},false);
@@ -369,19 +371,19 @@ const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fall
   {const ph=document.querySelector('#about .photo img');if(ph)$('ldAv').src=ph.src;}
   let li=0;const rot=setInterval(()=>{if(loaderDone)return clearInterval(rot);const m=$('ldMsg');m.style.opacity=0;setTimeout(()=>{m.textContent=lines[++li%lines.length];m.style.opacity=1;},400);},2600);
   setTimeout(()=>{$('ldSkip').hidden=false;},5000);$('ldSkip').onclick=finishLoad;}
- try{const ts=await C.createGooglePhotorealistic3DTileset();const SMALL=innerWidth<700,IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),MOBILE=IOS||matchMedia('(pointer: coarse)').matches;ts.maximumScreenSpaceError=SMALL?32:24;ts.dynamicScreenSpaceError=true;ts.foveatedScreenSpaceError=true;ts.foveatedConeSize=.35;ts.skipLevelOfDetail=false;const MB=1024*1024;ts.cacheBytes=(SMALL?96:MOBILE?160:512)*MB;ts.maximumCacheOverflowBytes=(SMALL?32:MOBILE?64:256)*MB;ts.preloadWhenHidden=false;ts.cullRequestsWhileMoving=true;ts.cullRequestsWhileMovingMultiplier=60;ts.preferLeaves=false;ts.progressiveResolutionHeightFraction=.5;
+ try{const ts=await C.createGooglePhotorealistic3DTileset();ts.maximumScreenSpaceError=SMALL?40:MOBILE?32:24;ts.dynamicScreenSpaceError=true;ts.foveatedScreenSpaceError=true;ts.foveatedConeSize=.35;ts.skipLevelOfDetail=false;const MB=1024*1024;ts.cacheBytes=(SMALL?40:MOBILE?90:512)*MB;ts.maximumCacheOverflowBytes=(SMALL?12:MOBILE?30:256)*MB;ts.preloadWhenHidden=false;ts.cullRequestsWhileMoving=true;ts.cullRequestsWhileMovingMultiplier=60;ts.preferLeaves=false;ts.progressiveResolutionHeightFraction=.5;
    viewer.useBrowserRecommendedResolution=true;viewer.resolutionScale=1;
    // fast first view, then step up to full sharpness once the opening tiles are in; step back down if the device struggles
-   let hq=false;const goHQ=()=>{if(hq)return;hq=true;ts.maximumScreenSpaceError=SMALL?18:MOBILE?12:6;ts.foveatedConeSize=.6;
+   let hq=false;const goHQ=()=>{if(hq)return;hq=true;ts.maximumScreenSpaceError=SMALL?26:MOBILE?18:6;ts.foveatedConeSize=.6;
      if(!MOBILE){viewer.useBrowserRecommendedResolution=false;viewer.resolutionScale=Math.min(1,2/(devicePixelRatio||1));}$('loading').classList.add('done');
-     let n=0,t0=performance.now();const fps=sc.postRender.addEventListener(()=>{if(++n<90)return;const ms=(performance.now()-t0)/n;fps();
-       if(ms>34){viewer.useBrowserRecommendedResolution=true;viewer.resolutionScale=1;ts.maximumScreenSpaceError=SMALL?22:MOBILE?16:10;}});};
+     if(MOBILE)return;let n=0,t0=performance.now();const fps=sc.postRender.addEventListener(()=>{if(++n<90)return;const ms=(performance.now()-t0)/n;fps();
+       if(ms>34){viewer.useBrowserRecommendedResolution=true;viewer.resolutionScale=1;ts.maximumScreenSpaceError=SMALL?32:MOBILE?22:10;}});};
    ts.initialTilesLoaded.addEventListener(()=>{finishLoad();goHQ();});setTimeout(()=>{finishLoad();goHQ();},20000);
    // live progress on the loading screen
    let peak=1;ts.loadProgress.addEventListener((pending,processing)=>{const left=pending+processing;peak=Math.max(peak,left);
      const pct=Math.round(100*(1-left/peak));if(!loaderDone){$('ldBar').style.width=Math.max(4,pct)+'%';$('ldPct').textContent=pct+'%';}});
    // moving water: a ripple layer laid on the harbour at sea level; land and buildings sit above it and hide it
-   (async()=>{try{const pts=[[151.2205,-33.8540],[151.2010,-33.8505],[151.2350,-33.8545],[151.2260,-33.8520]].map(([a,b])=>C.Cartographic.fromDegrees(a,b));
+   (async()=>{if(MOBILE)return;try{const pts=[[151.2205,-33.8540],[151.2010,-33.8505],[151.2350,-33.8545],[151.2260,-33.8520]].map(([a,b])=>C.Cartographic.fromDegrees(a,b));
      const got=await sc.sampleHeightMostDetailed(pts,[],2);const hs=got.map(c=>c.height).filter(h=>Number.isFinite(h)).sort((a,b)=>a-b);
      const h=(hs.length?hs[Math.floor(hs.length/2)]:22)+.6;
      const mat=C.Material.fromType('Water',{baseWaterColor:new C.Color(.09,.24,.3,.42),blendColor:new C.Color(.2,.45,.5,.3),
@@ -414,7 +416,8 @@ const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fall
  const angLerp=(a,b,k)=>{const d=((b-a+540)%360)-180;return a+d*k;};
  const cur={pos:shot(0).pos.clone(),h:shot(0).h,p:shot(0).p};let last=performance.now();
  const tmp=new C.Cartesian3();
- sc.preRender.addEventListener(()=>{
+ const prev=new C.Cartesian3();let ph=0,pp=0;
+ const tick=()=>{requestAnimationFrame(tick);
    const now=performance.now(),dt=Math.min(.5,(now-last)/1000);last=now;
    const s=sIndex(),i=Math.min(SHOTS.length-2,Math.floor(s)),k=s-i;let want;
    const r=$('tower').getBoundingClientRect(),inside=r.top<innerHeight*.5&&r.bottom>innerHeight*.5;
@@ -422,7 +425,8 @@ const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fall
    else{const a=shot(i),b=shot(i+1);want={pos:C.Cartesian3.lerp(a.pos,b.pos,k,new C.Cartesian3()),h:angLerp(a.h,b.h,k),p:a.p+(b.p-a.p)*k};}
    const damp=reduce?1:1-Math.exp(-dt*3.6);
    C.Cartesian3.lerp(cur.pos,want.pos,damp,cur.pos);cur.h=angLerp(cur.h,want.h%360,damp);cur.p+=(want.p-cur.p)*damp;
-   viewer.camera.setView({destination:cur.pos,orientation:{heading:C.Math.toRadians(cur.h),pitch:C.Math.toRadians(cur.p),roll:0}});});
+   if(C.Cartesian3.distance(prev,cur.pos)>.02||Math.abs(ph-cur.h)>.005||Math.abs(pp-cur.p)>.005){viewer.camera.setView({destination:cur.pos,orientation:{heading:C.Math.toRadians(cur.h),pitch:C.Math.toRadians(cur.p),roll:0}});
+     C.Cartesian3.clone(cur.pos,prev);ph=cur.h;pp=cur.p;sc.requestRender();}};requestAnimationFrame(tick);
  viewer.camera.frustum.fov=C.Math.toRadians(innerWidth<700?70:55);if(innerWidth>=760)viewer.camera.frustum.xOffset=-.0;
 
 })();
