@@ -361,7 +361,7 @@ const CESIUM_ION_TOKEN='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6ImtUNHV
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fallback"></div>');$('loading').classList.add('done');};
 // ---- phones and tablets: drone footage by section ----
-const TOUCH=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||matchMedia('(pointer: coarse)').matches;
+const TOUCH=Math.min(screen.width,screen.height)<600&&(/iPhone|iPod|Android/.test(navigator.userAgent)||matchMedia('(pointer: coarse)').matches); // phones only; tablets and computers get the live 3D city
 function videoMode(){const box=$('vids');box.hidden=false;const V=[...box.querySelectorAll('video')];let cur=-1,ok=0;
   V.forEach(v=>{v.src=v.dataset.src;v.addEventListener('canplay',()=>{ok++;},{once:true});v.addEventListener('error',()=>{v.remove();},{once:true});});
   // sections -> clip: hero+about 1, experience+education 2, skills+work 3, harbour+tower+contact 4
@@ -406,13 +406,15 @@ function videoMode(){const box=$('vids');box.hidden=false;const V=[...box.queryS
    let peak=1;ts.loadProgress.addEventListener((pending,processing)=>{const left=pending+processing;peak=Math.max(peak,left);
      const pct=Math.round(100*(1-left/peak));if(!loaderDone){$('ldBar').style.width=Math.max(4,pct)+'%';$('ldPct').textContent=pct+'%';}});
    // moving water: a ripple layer laid on the harbour at sea level; land and buildings sit above it and hide it
-   (async()=>{if(MOBILE)return;try{const pts=[[151.2205,-33.8540],[151.2010,-33.8505],[151.2350,-33.8545],[151.2260,-33.8520]].map(([a,b])=>C.Cartographic.fromDegrees(a,b));
+sc.primitives.add(ts);
+   const addWater=async()=>{if(MOBILE)return;try{const pts=[[151.2205,-33.8540],[151.2010,-33.8505],[151.2350,-33.8545],[151.2260,-33.8520]].map(([a,b])=>C.Cartographic.fromDegrees(a,b));
      const got=await sc.sampleHeightMostDetailed(pts,[],2);const hs=got.map(c=>c.height).filter(h=>Number.isFinite(h)).sort((a,b)=>a-b);
-     const h=(hs.length?hs[Math.floor(hs.length/2)]:22)+.6;
+     if(hs.length<3||hs[hs.length-1]-hs[0]>4)return;const h=hs[Math.floor(hs.length/2)]+.6;
      const mat=C.Material.fromType('Water',{baseWaterColor:new C.Color(.09,.24,.3,.42),blendColor:new C.Color(.2,.45,.5,.3),
        normalMap:C.buildModuleUrl('Assets/Textures/waterNormals.jpg'),frequency:9000,animationSpeed:.012,amplitude:6,specularIntensity:.7});
      sc.primitives.add(new C.Primitive({geometryInstances:new C.GeometryInstance({geometry:new C.RectangleGeometry({rectangle:C.Rectangle.fromDegrees(151.16,-33.878,151.30,-33.83),height:h,vertexFormat:C.EllipsoidSurfaceAppearance.VERTEX_FORMAT})}),
-       appearance:new C.EllipsoidSurfaceAppearance({material:mat,aboveGround:true,translucent:true}),asynchronous:false}));}catch(e){console.warn('water layer skipped',e);}})();sc.primitives.add(ts);}
+       appearance:new C.EllipsoidSurfaceAppearance({material:mat,aboveGround:true,translucent:true}),asynchronous:false}));}catch(e){console.warn('water layer skipped',e);}};
+   ts.initialTilesLoaded.addEventListener(()=>setTimeout(addWater,1500));}
  catch(e){console.error(e);viewer.destroy();fallback();return;}
  // ---- camera shots: [longitude, latitude, height m, heading deg, pitch deg] ----
  const OH=[151.2153,-33.8568],BR=[151.2108,-33.8523];
