@@ -143,7 +143,19 @@ h2{font-family:var(--display);font-weight:600;font-size:clamp(1.8rem,4.2vw,2.6re
 footer{position:relative;z-index:2;text-align:center;color:var(--muted);font-size:12px;padding:0 16px calc(24px + env(safe-area-inset-bottom,0px))}
 
 #err{position:fixed;inset:0;z-index:0;background:radial-gradient(circle at 30% 20%,#2a4756,#0b1520 70%)}
-#loading{position:fixed;inset:0;z-index:9;display:grid;place-items:center;background:var(--night);color:var(--ink);font-family:var(--display);font-size:1.3rem;transition:opacity 1s}
+#loading{position:fixed;inset:0;z-index:9;display:grid;place-items:center;background:radial-gradient(120% 90% at 50% 110%,#2e5a73 0%,#13283a 45%,#0a1520 100%);color:var(--ink);transition:opacity 1.2s;overflow:hidden;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
+#loading .ld{width:min(520px,100%);text-align:center;position:relative;z-index:1}
+#loading .ld small{display:block;font:700 12px var(--body);letter-spacing:.24em;text-transform:uppercase;color:var(--accent)}
+#loading h2{font-family:var(--display);font-weight:600;font-size:clamp(1.8rem,5vw,2.8rem);margin:.35em 0 .2em}
+#loading .msg{font:15px/1.5 var(--body);color:#cfd8dc;min-height:1.5em;transition:opacity .4s}
+#loading .bar{height:3px;border-radius:2px;background:rgba(255,255,255,.14);margin:22px auto 10px;overflow:hidden;width:min(360px,90%)}
+#loading .bar i{display:block;height:100%;width:4%;background:linear-gradient(90deg,var(--accent),#ffd6b8);transition:width .5s}
+#loading .pct{font:600 12px var(--body);color:var(--muted);font-variant-numeric:tabular-nums}
+#loading .first{margin:22px auto 0;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.05);font:14px/1.5 var(--body);color:#dfe6e8;max-width:420px}
+#loading .skip{margin-top:16px;background:transparent;border:1px solid var(--line);color:var(--ink);font:600 13px var(--body);padding:9px 14px;border-radius:9px;cursor:pointer}
+#loading svg{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:min(1100px,140%);opacity:.18}
+#loading .wave{animation:wv 6s ease-in-out infinite}
+@keyframes wv{50%{transform:translateX(-30px)}}
 #loading.done{opacity:0;pointer-events:none}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.photo.reveal{clip-path:none}.ch .panel .tl li,.ch .panel .skill,.ch .panel .proj{opacity:1;transform:none}html{scroll-behavior:auto}.ch .panel{opacity:1;transform:none}}
 </style>
@@ -152,7 +164,18 @@ footer{position:relative;z-index:2;text-align:center;color:var(--muted);font-siz
 <body>
 <div id="stage"></div>
 <div id="shade"></div>
-<div id="loading">Rushank Lashkari</div>
+<div id="loading" role="status" aria-live="polite">
+  <svg viewBox="0 0 1100 260" aria-hidden="true"><path fill="#fff" d="M120 250 L120 150 L135 150 L135 250 Z M965 250 L965 150 L980 150 L980 250 Z"/><path fill="none" stroke="#fff" stroke-width="7" d="M135 168 Q550 -20 965 168"/><path fill="none" stroke="#fff" stroke-width="4" d="M135 200 Q550 60 965 200"/><path fill="#fff" d="M0 205 H1100 V212 H0Z"/><path class="wave" fill="#fff" opacity=".6" d="M0 236 Q60 226 120 236 T240 236 T360 236 T480 236 T600 236 T720 236 T840 236 T960 236 T1080 236 T1200 236 V260 H0Z"/></svg>
+  <div class="ld">
+    <small>Rushank Lashkari</small>
+    <h2>Sydney is loading</h2>
+    <p class="msg" id="ldMsg">Streaming the harbour in from aerial photography</p>
+    <div class="bar"><i id="ldBar"></i></div>
+    <div class="pct" id="ldPct">Connecting</div>
+    <p class="first" id="ldFirst" hidden>First time here? The whole city is built live in your browser, so give it a few seconds to load properly. It's worth the wait, and it's much faster next time.</p>
+    <button class="skip" id="ldSkip" hidden>Start reading while it loads</button>
+  </div>
+</div>
 
 <header id="top">
   <a id="mark" class="panel" href="#hero">Rushank Lashkari</a>
@@ -335,6 +358,12 @@ const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fall
  sc.skyAtmosphere.show=true;sc.fog.enabled=true;sc.fog.density=1.2e-4;sc.postProcessStages.fxaa.enabled=true;
  viewer.clock.currentTime=C.JulianDate.fromIso8601('2026-01-15T02:30:00Z');viewer.clock.shouldAnimate=false; // 1:30 pm AEDT, summer
  sc.light=new C.SunLight();sc.highDynamicRange=false;
+ let loaderDone=false;const finishLoad=()=>{if(loaderDone)return;loaderDone=true;$('ldBar').style.width='100%';$('ldPct').textContent='Ready';
+   try{localStorage.setItem('rlSydneyVisited','1');}catch(e){}setTimeout(()=>$('loading').classList.add('done'),500);};
+ {let first=true;try{first=!localStorage.getItem('rlSydneyVisited');}catch(e){}if(first)$('ldFirst').hidden=false;
+  const lines=['Streaming the harbour in from aerial photography','Laying 1,056,006 tiles on the Opera House shells','Raising the Bridge arch 134 metres above the water','Filling Sydney Harbour','Lining up the ferries at Circular Quay'];
+  let li=0;const rot=setInterval(()=>{if(loaderDone)return clearInterval(rot);const m=$('ldMsg');m.style.opacity=0;setTimeout(()=>{m.textContent=lines[++li%lines.length];m.style.opacity=1;},400);},2600);
+  setTimeout(()=>{$('ldSkip').hidden=false;},5000);$('ldSkip').onclick=finishLoad;}
  try{const ts=await C.createGooglePhotorealistic3DTileset();const SMALL=innerWidth<700;ts.maximumScreenSpaceError=SMALL?32:24;ts.dynamicScreenSpaceError=true;ts.foveatedScreenSpaceError=true;ts.foveatedConeSize=.35;ts.skipLevelOfDetail=false;ts.cacheBytes=1024*1024*1024;ts.maximumCacheOverflowBytes=512*1024*1024;ts.preloadWhenHidden=true;ts.preferLeaves=false;ts.progressiveResolutionHeightFraction=.5;
    viewer.useBrowserRecommendedResolution=true;viewer.resolutionScale=1;
    // fast first view, then step up to full sharpness once the opening tiles are in; step back down if the device struggles
@@ -342,7 +371,18 @@ const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fall
      viewer.resolutionScale=Math.min(1,2/(devicePixelRatio||1));$('loading').classList.add('done');
      let n=0,t0=performance.now();const fps=sc.postRender.addEventListener(()=>{if(++n<90)return;const ms=(performance.now()-t0)/n;fps();
        if(ms>34){viewer.useBrowserRecommendedResolution=true;viewer.resolutionScale=1;ts.maximumScreenSpaceError=SMALL?14:10;}});};
-   ts.initialTilesLoaded.addEventListener(goHQ);setTimeout(goHQ,7000);sc.primitives.add(ts);}
+   ts.initialTilesLoaded.addEventListener(()=>{finishLoad();goHQ();});setTimeout(()=>{finishLoad();goHQ();},20000);
+   // live progress on the loading screen
+   let peak=1;ts.loadProgress.addEventListener((pending,processing)=>{const left=pending+processing;peak=Math.max(peak,left);
+     const pct=Math.round(100*(1-left/peak));if(!loaderDone){$('ldBar').style.width=Math.max(4,pct)+'%';$('ldPct').textContent=pct+'%';}});
+   // moving water: a ripple layer laid on the harbour at sea level; land and buildings sit above it and hide it
+   (async()=>{try{const pts=[[151.2205,-33.8540],[151.2010,-33.8505],[151.2350,-33.8545],[151.2260,-33.8520]].map(([a,b])=>C.Cartographic.fromDegrees(a,b));
+     const got=await sc.sampleHeightMostDetailed(pts,[],2);const hs=got.map(c=>c.height).filter(h=>Number.isFinite(h)).sort((a,b)=>a-b);
+     const h=(hs.length?hs[Math.floor(hs.length/2)]:22)+.6;
+     const mat=C.Material.fromType('Water',{baseWaterColor:new C.Color(.09,.24,.3,.42),blendColor:new C.Color(.2,.45,.5,.3),
+       normalMap:C.buildModuleUrl('Assets/Textures/waterNormals.jpg'),frequency:9000,animationSpeed:.012,amplitude:6,specularIntensity:.7});
+     sc.primitives.add(new C.Primitive({geometryInstances:new C.GeometryInstance({geometry:new C.RectangleGeometry({rectangle:C.Rectangle.fromDegrees(151.16,-33.878,151.30,-33.83),height:h,vertexFormat:C.EllipsoidSurfaceAppearance.VERTEX_FORMAT})}),
+       appearance:new C.EllipsoidSurfaceAppearance({material:mat,aboveGround:true,translucent:true}),asynchronous:false}));}catch(e){console.warn('water layer skipped',e);}})();sc.primitives.add(ts);}
  catch(e){console.error(e);viewer.destroy();fallback();return;}
  // ---- camera shots: [longitude, latitude, height m, heading deg, pitch deg] ----
  const OH=[151.2153,-33.8568],BR=[151.2108,-33.8523];
@@ -375,13 +415,11 @@ const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fall
    const r=$('tower').getBoundingClientRect(),inside=r.top<innerHeight*.5&&r.bottom>innerHeight*.5;
    if(inside){const p=Math.max(0,Math.min(1,-r.top/Math.max(1,r.height-innerHeight)));want=orbit(200+p*360,-14-Math.sin(p*Math.PI)*6,520);}
    else{const a=shot(i),b=shot(i+1);want={pos:C.Cartesian3.lerp(a.pos,b.pos,k,new C.Cartesian3()),h:angLerp(a.h,b.h,k),p:a.p+(b.p-a.p)*k};}
-   const damp=reduce?1:1-Math.exp(-dt*4.5);
+   const damp=reduce?1:1-Math.exp(-dt*3.6);
    C.Cartesian3.lerp(cur.pos,want.pos,damp,cur.pos);cur.h=angLerp(cur.h,want.h%360,damp);cur.p+=(want.p-cur.p)*damp;
    viewer.camera.setView({destination:cur.pos,orientation:{heading:C.Math.toRadians(cur.h),pitch:C.Math.toRadians(cur.p),roll:0}});});
  viewer.camera.frustum.fov=C.Math.toRadians(innerWidth<700?70:55);if(innerWidth>=760)viewer.camera.frustum.xOffset=-.0;
- const hide=()=>$('loading').classList.add('done');
- let done=false;sc.globe;setTimeout(hide,6000);
- viewer.scene.postRender.addEventListener(function f(){if(!done&&viewer.scene.primitives.length){done=true;setTimeout(hide,1200);}});
+
 })();
 </script>
 
