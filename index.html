@@ -48,12 +48,12 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-off
 @media(max-width:760px){#rail{display:none}}
 
 /* chapters */
-.ch{min-height:110vh;display:flex;align-items:center;padding:96px max(16px,env(safe-area-inset-right,0px)) 96px max(16px,env(safe-area-inset-left,0px));box-sizing:border-box}
+.ch{min-height:100vh;display:flex;align-items:center;padding:96px max(16px,env(safe-area-inset-right,0px)) 96px max(16px,env(safe-area-inset-left,0px));box-sizing:border-box}
 .ch.right{justify-content:flex-end}
 .ch .panel{width:min(560px,100%);padding:28px 30px;box-sizing:border-box;transform:translateY(30px);opacity:.35;transition:transform .9s cubic-bezier(.2,.7,.2,1),opacity .9s}
 .ch .panel.in{transform:none;opacity:1}
 .ch .panel.cap{width:min(440px,100%)}
-.ch.tall{min-height:340vh;align-items:flex-start}
+.ch.tall{min-height:220vh;align-items:flex-start}
 .ch.tall .sticky{position:sticky;top:calc(96px + env(safe-area-inset-top,0px))}
 .principles{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:10px}
 .principles li{color:#dde4e1;font-size:15px;line-height:1.5}
@@ -303,7 +303,7 @@ document.querySelectorAll('.ch .panel').forEach(p=>[...p.querySelectorAll('.tl l
  if(!matchMedia('(prefers-reduced-motion: reduce)').matches)requestAnimationFrame(run);})();
 let lenis=null;
 if(window.Lenis&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
-  try{lenis=new Lenis({duration:1.35,easing:t=>1-Math.pow(1-t,4),smoothWheel:true,wheelMultiplier:.9,touchMultiplier:1.4});
+  try{lenis=new Lenis({duration:.9,easing:t=>1-Math.pow(1-t,3),smoothWheel:true,wheelMultiplier:1.15,touchMultiplier:1.6});
     document.documentElement.style.scrollBehavior='auto';
     document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{const t=document.querySelector(a.getAttribute('href'));if(!t)return;e.preventDefault();
       lenis.scrollTo(t.id==='hero'?0:t,{offset:t.classList.contains('tall')?0:-(innerHeight-Math.min(t.offsetHeight,innerHeight))/2,duration:2.2});}));
@@ -329,13 +329,14 @@ const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fall
  if(!window.Cesium||!CESIUM_ION_TOKEN){fallback();return;}
  const C=Cesium;C.Ion.defaultAccessToken=CESIUM_ION_TOKEN;
  let viewer;
- try{viewer=new C.Viewer('stage',{globe:false,baseLayerPicker:false,geocoder:false,homeButton:false,sceneModePicker:false,navigationHelpButton:false,animation:false,timeline:false,fullscreenButton:false,infoBox:false,selectionIndicator:false,skyAtmosphere:new C.SkyAtmosphere(),msaaSamples:4});}
+ try{viewer=new C.Viewer('stage',{globe:false,baseLayerPicker:false,geocoder:false,homeButton:false,sceneModePicker:false,navigationHelpButton:false,animation:false,timeline:false,fullscreenButton:false,infoBox:false,selectionIndicator:false,skyAtmosphere:new C.SkyAtmosphere(),msaaSamples:1,requestRenderMode:false,targetFrameRate:60});}
  catch(e){fallback();return;}
  const sc=viewer.scene;sc.screenSpaceCameraController.enableInputs=false;
  sc.skyAtmosphere.show=true;sc.fog.enabled=true;sc.fog.density=1.2e-4;sc.postProcessStages.fxaa.enabled=true;
  viewer.clock.currentTime=C.JulianDate.fromIso8601('2026-01-15T02:30:00Z');viewer.clock.shouldAnimate=false; // 1:30 pm AEDT, summer
- sc.light=new C.SunLight();sc.highDynamicRange=true;
- try{const ts=await C.createGooglePhotorealistic3DTileset();ts.maximumScreenSpaceError=innerWidth<700?16:8;sc.primitives.add(ts);}
+ sc.light=new C.SunLight();sc.highDynamicRange=false;
+ try{const ts=await C.createGooglePhotorealistic3DTileset();ts.maximumScreenSpaceError=innerWidth<700?28:18;ts.dynamicScreenSpaceError=true;ts.foveatedScreenSpaceError=true;ts.foveatedConeSize=.2;ts.cacheBytes=1024*1024*1024;ts.maximumCacheOverflowBytes=512*1024*1024;ts.preloadWhenHidden=true;ts.preferLeaves=false;ts.progressiveResolutionHeightFraction=.5;
+   viewer.resolutionScale=Math.min(1,1.25/(window.devicePixelRatio||1))*(window.devicePixelRatio>1?window.devicePixelRatio:1);viewer.useBrowserRecommendedResolution=true;sc.primitives.add(ts);}
  catch(e){console.error(e);viewer.destroy();fallback();return;}
  // ---- camera shots: [longitude, latitude, height m, heading deg, pitch deg] ----
  const OH=[151.2153,-33.8568],BR=[151.2108,-33.8523];
@@ -346,7 +347,7 @@ const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fall
   [151.2112,-33.8495,420,175,-38],   // education: over Circular Quay and The Rocks
   [151.2040,-33.8528,45,93,-4],      // skills: through the arch to the Opera House
   [151.2075,-33.8790,650,4,-24],     // work: above the CBD looking north over the harbour
-  [151.2125,-33.8640,2200,2,-62],    // the whole harbour from above
+  [151.2125,-33.8620,1300,2,-62],    // the whole harbour from above
   null,                              // the 360 around the Opera House (computed)
   [151.2040,-33.8400,380,152,-16]];  // contact: across the harbour from North Sydney
  const ohC=C.Cartesian3.fromDegrees(OH[0],OH[1],30),ENU=C.Transforms.eastNorthUpToFixedFrame(ohC);
@@ -368,7 +369,7 @@ const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fall
    const r=$('tower').getBoundingClientRect(),inside=r.top<innerHeight*.5&&r.bottom>innerHeight*.5;
    if(inside){const p=Math.max(0,Math.min(1,-r.top/Math.max(1,r.height-innerHeight)));want=orbit(200+p*360,-14-Math.sin(p*Math.PI)*6,520);}
    else{const a=shot(i),b=shot(i+1);want={pos:C.Cartesian3.lerp(a.pos,b.pos,k,new C.Cartesian3()),h:angLerp(a.h,b.h,k),p:a.p+(b.p-a.p)*k};}
-   const damp=reduce?1:1-Math.exp(-dt*2.4);
+   const damp=reduce?1:1-Math.exp(-dt*4.5);
    C.Cartesian3.lerp(cur.pos,want.pos,damp,cur.pos);cur.h=angLerp(cur.h,want.h%360,damp);cur.p+=(want.p-cur.p)*damp;
    viewer.camera.setView({destination:cur.pos,orientation:{heading:C.Math.toRadians(cur.h),pitch:C.Math.toRadians(cur.p),roll:0}});});
  viewer.camera.frustum.fov=C.Math.toRadians(innerWidth<700?70:55);
