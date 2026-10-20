@@ -356,7 +356,9 @@ const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fall
  let viewer;
  try{viewer=new C.Viewer('stage',{globe:false,baseLayerPicker:false,geocoder:false,homeButton:false,sceneModePicker:false,navigationHelpButton:false,animation:false,timeline:false,fullscreenButton:false,infoBox:false,selectionIndicator:false,skyAtmosphere:new C.SkyAtmosphere(),msaaSamples:1,requestRenderMode:false,targetFrameRate:60});}
  catch(e){fallback();return;}
- const sc=viewer.scene;sc.screenSpaceCameraController.enableInputs=false;
+ const sc=viewer.scene;
+ viewer.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();try{sessionStorage.setItem('rlScroll',String(scrollY));}catch(_){}setTimeout(()=>location.reload(),300);},false);
+ try{const y=+sessionStorage.getItem('rlScroll');if(y){sessionStorage.removeItem('rlScroll');requestAnimationFrame(()=>scrollTo(0,y));}}catch(_){}sc.screenSpaceCameraController.enableInputs=false;
  sc.skyAtmosphere.show=true;sc.fog.enabled=true;sc.fog.density=1.2e-4;sc.postProcessStages.fxaa.enabled=true;
  viewer.clock.currentTime=C.JulianDate.fromIso8601('2026-01-15T02:30:00Z');viewer.clock.shouldAnimate=false; // 1:30 pm AEDT, summer
  sc.light=new C.SunLight();sc.highDynamicRange=false;
@@ -367,13 +369,13 @@ const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fall
   {const ph=document.querySelector('#about .photo img');if(ph)$('ldAv').src=ph.src;}
   let li=0;const rot=setInterval(()=>{if(loaderDone)return clearInterval(rot);const m=$('ldMsg');m.style.opacity=0;setTimeout(()=>{m.textContent=lines[++li%lines.length];m.style.opacity=1;},400);},2600);
   setTimeout(()=>{$('ldSkip').hidden=false;},5000);$('ldSkip').onclick=finishLoad;}
- try{const ts=await C.createGooglePhotorealistic3DTileset();const SMALL=innerWidth<700;ts.maximumScreenSpaceError=SMALL?32:24;ts.dynamicScreenSpaceError=true;ts.foveatedScreenSpaceError=true;ts.foveatedConeSize=.35;ts.skipLevelOfDetail=false;ts.cacheBytes=1024*1024*1024;ts.maximumCacheOverflowBytes=512*1024*1024;ts.preloadWhenHidden=true;ts.preferLeaves=false;ts.progressiveResolutionHeightFraction=.5;
+ try{const ts=await C.createGooglePhotorealistic3DTileset();const SMALL=innerWidth<700,IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),MOBILE=IOS||matchMedia('(pointer: coarse)').matches;ts.maximumScreenSpaceError=SMALL?32:24;ts.dynamicScreenSpaceError=true;ts.foveatedScreenSpaceError=true;ts.foveatedConeSize=.35;ts.skipLevelOfDetail=false;const MB=1024*1024;ts.cacheBytes=(SMALL?96:MOBILE?160:512)*MB;ts.maximumCacheOverflowBytes=(SMALL?32:MOBILE?64:256)*MB;ts.preloadWhenHidden=false;ts.cullRequestsWhileMoving=true;ts.cullRequestsWhileMovingMultiplier=60;ts.preferLeaves=false;ts.progressiveResolutionHeightFraction=.5;
    viewer.useBrowserRecommendedResolution=true;viewer.resolutionScale=1;
    // fast first view, then step up to full sharpness once the opening tiles are in; step back down if the device struggles
-   let hq=false;const goHQ=()=>{if(hq)return;hq=true;ts.maximumScreenSpaceError=SMALL?10:6;ts.foveatedConeSize=.6;viewer.useBrowserRecommendedResolution=false;
-     viewer.resolutionScale=Math.min(1,2/(devicePixelRatio||1));$('loading').classList.add('done');
+   let hq=false;const goHQ=()=>{if(hq)return;hq=true;ts.maximumScreenSpaceError=SMALL?18:MOBILE?12:6;ts.foveatedConeSize=.6;
+     if(!MOBILE){viewer.useBrowserRecommendedResolution=false;viewer.resolutionScale=Math.min(1,2/(devicePixelRatio||1));}$('loading').classList.add('done');
      let n=0,t0=performance.now();const fps=sc.postRender.addEventListener(()=>{if(++n<90)return;const ms=(performance.now()-t0)/n;fps();
-       if(ms>34){viewer.useBrowserRecommendedResolution=true;viewer.resolutionScale=1;ts.maximumScreenSpaceError=SMALL?14:10;}});};
+       if(ms>34){viewer.useBrowserRecommendedResolution=true;viewer.resolutionScale=1;ts.maximumScreenSpaceError=SMALL?22:MOBILE?16:10;}});};
    ts.initialTilesLoaded.addEventListener(()=>{finishLoad();goHQ();});setTimeout(()=>{finishLoad();goHQ();},20000);
    // live progress on the loading screen
    let peak=1;ts.loadProgress.addEventListener((pending,processing)=>{const left=pending+processing;peak=Math.max(peak,left);
