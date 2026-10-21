@@ -360,7 +360,10 @@ addEventListener('scroll',activeChapter,{passive:true});activeChapter();
 // ================= Photorealistic Sydney via Cesium ion (Google Photorealistic 3D Tiles) =================
 const CESIUM_ION_TOKEN='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6ImtUNHVndWYtQUNCTzBDQTAiLCJqdGkiOiI3NGU4NmY0NC0xMGEzLTQ2ZmUtYTRlNC1mNWY0ZmY4MmVkM2IiLCJpZCI6NTMwOTUzLCJzdWIiOiJSdXNoYW5rIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6InJ1c2hhbmstcG9ydGZvbGlvIiwiaWF0IjoxNzkyNDkwODYzfQ.4x8ov7sbbR0YI4rexVl-LgeFZ2sNYjqxxaaFyF-aDUI';
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const fallback=()=>{document.body.insertAdjacentHTML('afterbegin','<div id="fallback"></div>');$('loading').classList.add('done');};
+const fallback=(why)=>{const msg=String(why&&(why.message||why.statusCode&&('HTTP '+why.statusCode+' '+(why.response||''))||why)||'unknown');
+  console.error('3D city unavailable:',msg,why);
+  if(location.hash==='#debug'){$('loading').classList.add('done');document.body.insertAdjacentHTML('afterbegin','<div id="fallback"></div><pre style="position:fixed;z-index:20;left:16px;right:16px;top:80px;white-space:pre-wrap;background:#300;color:#fff;padding:16px;border-radius:10px;font:13px/1.4 monospace">3D city failed to load\n\nReason: '+msg.replace(/</g,'&lt;')+'\n\nCesium loaded: '+!!window.Cesium+'\nWebGL: '+!!document.createElement('canvas').getContext('webgl')+'\nBrowser: '+navigator.userAgent.replace(/</g,'&lt;')+'</pre>');return;}
+  try{sessionStorage.setItem('rlScroll',String(scrollY));}catch(e){}location.replace('model.html');};
 // ---- phones and tablets: drone footage by section ----
 const TOUCH=Math.min(screen.width,screen.height)<600&&(/iPhone|iPod|Android/.test(navigator.userAgent)||matchMedia('(pointer: coarse)').matches); // phones only; tablets and computers get the live 3D city
 function videoMode(){const box=$('vids');box.hidden=false;const V=[...box.querySelectorAll('video')];let cur=-1,ok=0;
@@ -374,9 +377,9 @@ function videoMode(){const box=$('vids');box.hidden=false;const V=[...box.queryS
   addEventListener('scroll',pick,{passive:true});pick();
   const done=()=>$('loading').classList.add('done');V[0]&&V[0].addEventListener('playing',()=>setTimeout(done,300),{once:true});setTimeout(done,4000);
   try{localStorage.setItem('rlSydneyVisited','1');}catch(e){}}
-(async()=>{
+(async()=>{try{
  if(TOUCH){videoMode();return;}
- if(!window.Cesium||!CESIUM_ION_TOKEN){fallback();return;}
+ if(!window.Cesium){fallback('CesiumJS library did not load from cdn.jsdelivr.net');return;}
  const C=Cesium;C.Ion.defaultAccessToken=CESIUM_ION_TOKEN;
  const TABLET=matchMedia('(pointer: coarse)').matches||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
  // loading screen: rotating highlights, first-visit note, live progress, skip button
@@ -389,7 +392,7 @@ function videoMode(){const box=$('vids');box.hidden=false;const V=[...box.queryS
   setTimeout(()=>{$('ldSkip').hidden=false;},5000);$('ldSkip').onclick=finishLoad;setTimeout(finishLoad,15000);}
  let viewer;
  try{viewer=new C.Viewer('stage',{globe:false,baseLayerPicker:false,geocoder:false,homeButton:false,sceneModePicker:false,navigationHelpButton:false,animation:false,timeline:false,fullscreenButton:false,infoBox:false,selectionIndicator:false,skyAtmosphere:new C.SkyAtmosphere(),msaaSamples:1});}
- catch(e){console.error('Viewer failed',e);fallback();return;}
+ catch(e){fallback(e);return;}
  const sc=viewer.scene;sc.screenSpaceCameraController.enableInputs=false;
  sc.skyAtmosphere.show=true;sc.fog.enabled=true;sc.fog.density=1.2e-4;sc.postProcessStages.fxaa.enabled=true;
  viewer.clock.currentTime=C.JulianDate.fromIso8601('2026-01-15T02:30:00Z');viewer.clock.shouldAnimate=false; // 1:30 pm AEDT, summer
@@ -400,7 +403,7 @@ function videoMode(){const box=$('vids');box.hidden=false;const V=[...box.queryS
    ts.initialTilesLoaded.addEventListener(finishLoad);
    let peak=1;ts.loadProgress.addEventListener((pending,processing)=>{const left=pending+processing;peak=Math.max(peak,left);
      const pct=Math.round(100*(1-left/peak));if(!loaderDone){$('ldBar').style.width=Math.max(4,pct)+'%';$('ldPct').textContent=pct+'%';}});}
- catch(e){console.error('3D city failed to load',e);viewer.destroy();fallback();return;}
+ catch(e){try{viewer.destroy();}catch(_){ }fallback(e);return;}
  // ---- camera shots: [longitude, latitude, height m, heading deg, pitch deg] ----
  const OH=[151.2153,-33.8568];
  const SHOTS=[
@@ -435,7 +438,7 @@ function videoMode(){const box=$('vids');box.hidden=false;const V=[...box.queryS
    const damp=reduce?1:1-Math.exp(-dt*3.6);
    C.Cartesian3.lerp(cur.pos,want.pos,damp,cur.pos);cur.h=angLerp(cur.h,want.h%360,damp);cur.p+=(want.p-cur.p)*damp;
    viewer.camera.setView({destination:cur.pos,orientation:{heading:C.Math.toRadians(cur.h),pitch:C.Math.toRadians(cur.p),roll:0}});});
-})();
+}catch(e){fallback(e);}})();
 </script>
 
 </body>
