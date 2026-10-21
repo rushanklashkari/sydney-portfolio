@@ -331,7 +331,7 @@ else{try{renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high
 if(renderer){
 const touch=matchMedia('(pointer: coarse)').matches;
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const DPR=Math.min(devicePixelRatio,touch?1.5:2);
+const DPR=Math.min(devicePixelRatio,touch?1.25:2);
 renderer.setPixelRatio(DPR);
 renderer.outputEncoding=THREE.sRGBEncoding;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
@@ -431,7 +431,7 @@ const skyScene=new THREE.Scene();const sky2=new THREE.Sky();sky2.material=sky.ma
 const pmrem=new THREE.PMREMGenerator(renderer);let envRT=null;
 const hemi=new THREE.HemisphereLight(0xdfefff,0x6b7a55,.35);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff1dc,2.4);sun.castShadow=true;
-sun.shadow.mapSize.set(touch?2048:4096,touch?2048:4096);sun.shadow.bias=-.0003;sun.shadow.normalBias=.5;
+sun.shadow.mapSize.set(touch?1024:4096,touch?1024:4096);sun.shadow.bias=-.0003;sun.shadow.normalBias=.5;
 scene.add(sun,sun.target);
 const SUNDIR=new THREE.Vector3(0,1,0);
 
@@ -753,7 +753,7 @@ const lin=c=>new THREE.Color(c).convertSRGBToLinear();
 const isGL2=renderer.capabilities.isWebGL2;
 const rtOpts={format:THREE.RGBAFormat,stencilBuffer:true,depthBuffer:true,type:isGL2?THREE.HalfFloatType:THREE.UnsignedByteType};
 const rt=isGL2&&THREE.WebGLMultisampleRenderTarget?new THREE.WebGLMultisampleRenderTarget(innerWidth*DPR,innerHeight*DPR,rtOpts):new THREE.WebGLRenderTarget(innerWidth*DPR,innerHeight*DPR,rtOpts);
-if(rt.samples!==undefined)rt.samples=touch?2:4;
+if(rt.samples!==undefined)rt.samples=touch?0:4;
 const composer=new THREE.EffectComposer(renderer,rt);
 composer.addPass(new THREE.RenderPass(scene,cam));
 const bloom=new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth/2,innerHeight/2),.3,.55,.9);composer.addPass(bloom);

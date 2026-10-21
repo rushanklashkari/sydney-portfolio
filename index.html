@@ -162,6 +162,32 @@ footer{position:relative;z-index:2;text-align:center;color:var(--muted);font-siz
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.photo.reveal{clip-path:none}.ch .panel .tl li,.ch .panel .skill,.ch .panel .proj{opacity:1;transform:none}html{scroll-behavior:auto}.ch .panel{opacity:1;transform:none}}
 </style>
 
+<link rel="canonical" href="https://rushanklashkari.com">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Rushank Lashkari",
+  "url": "https://rushanklashkari.com",
+  "jobTitle": "Senior IT Sales Strategist",
+  "description": "Senior IT Sales Strategist and enterprise B2B technology sales professional based in Canberra, ACT, Australia.",
+  "email": "lashkari.rushank@gmail.com",
+  "telephone": "+61480422480",
+  "address": {"@type":"PostalAddress","addressLocality":"Canberra","addressRegion":"ACT","addressCountry":"AU"},
+  "worksFor": {"@type":"Organization","name":"Harvey Norman","url":"https://www.harveynorman.com.au"},
+  "alumniOf": [
+    {"@type":"CollegeOrUniversity","name":"University of Canberra","url":"https://www.canberra.edu.au"},
+    {"@type":"CollegeOrUniversity","name":"University of Rajasthan"}
+  ],
+  "sameAs": [
+    "https://www.linkedin.com/in/rushank-lashkari/",
+    "https://github.com/rushanklashkari",
+    "https://medium.com/@rushanklashkari",
+    "https://au.pinterest.com/lashkarirushank/"
+  ],
+  "knowsAbout": ["IT Sales","Enterprise B2B Sales","SaaS Sales","Channel Sales","Technology Sales","Consultative Selling","CRM Management"]
+}
+</script>
 </head>
 <body>
 <div id="stage"></div>
@@ -368,6 +394,9 @@ const fallback=(why)=>{const msg=String(why&&(why.message||why.statusCode&&('HTT
 const TOUCH=Math.min(screen.width,screen.height)<600&&(/iPhone|iPod|Android/.test(navigator.userAgent)||matchMedia('(pointer: coarse)').matches); // phones only; tablets and computers get the live 3D city
 function videoMode(){const box=$('vids');box.hidden=false;const V=[...box.querySelectorAll('video')];let cur=-1,ok=0;
   V.forEach(v=>{v.src=v.dataset.src;v.addEventListener('canplay',()=>{ok++;},{once:true});v.addEventListener('error',()=>{v.remove();},{once:true});});
+  // no clips uploaded yet (or they fail to load): show the built-in 3D harbour instead of an empty background
+  const toModel=()=>{if(ok)return;try{sessionStorage.setItem('rlScroll',String(scrollY));}catch(e){}location.replace('model.html');};
+  V[0]&&V[0].addEventListener('error',toModel,{once:true});setTimeout(toModel,6000);
   // sections -> clip: hero+about 1, experience+education 2, skills+work 3, harbour+tower+contact 4
   const MAP={hero:0,about:0,experience:1,education:1,skills:2,work:2,ainslie:3,tower:3,contact:3};
   const pick=()=>{const mid=innerHeight*.5;let id='hero';CH.forEach(c=>{if(c.getBoundingClientRect().top<mid)id=c.id;});
